@@ -1,0 +1,37 @@
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.0/bootstrap-table.min.css">
+
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+		<script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.0/bootstrap-table.min.js"></script>
+		<style>
+			.container {
+				padding-top:20px;
+				padding-bottom:20px;
+			}
+			.table {
+				font-size: 12px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<table data-toggle="table" data-url="../data/species.json" data-height="620" data-pagination="true" data-striped="true" data-page-size="100">
+	            <thead>
+	                <tr>
+	                    <th data-field="group">Grupo</th>
+	                    <th data-field="order">Orden</th>
+	                    <th data-field="family">Familia</th>
+	                    <th data-field="scientificName">Nombre Cientifico</th>
+	                    <th data-field="commonNames">Nombres Comunes</th>
+	                    <th data-field="code">Codigo</th>
+	                    <th data-field="conservationState">Estado de conservacion</th>
+	                    <th data-field="native">Nativa</th>
+	                </tr>
+	            </thead>
+	        </table>
+        </div>
+	</body>
+</html>

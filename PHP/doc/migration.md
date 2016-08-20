@@ -68,4 +68,4 @@ Database 'biouy' must be created and postgis extension enabled.
 # Backup and restore data
 
     /usr/bin/pg_dump --host 127.0.0.1 --port 54320 --username "homestead" --no-password  --format custom --blobs -O -x  --verbose --file "/tmp/biouybkp" "biouy"
-/    usr/bin/pg_restore --host 127.0.0.1 --port 54320 --username "homestead" --dbname "biouy" --no-password  --verbose "/tmp/biouybkp"
+    /usr/bin/pg_restore --host 127.0.0.1 --port 54320 --username "homestead" --dbname "biouy" --no-password  --verbose "/tmp/biouybkp"

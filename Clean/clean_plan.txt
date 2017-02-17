@@ -1,0 +1,25 @@
+Se respalda la capa ppr_biomes => ppr_biomes_bak
+
+También se respalda con un dump la base entera: ~/BioUy/biouy_dump_01
+
+01: Backup y ST_RemoveRepeatedPoints
+
+02: ST_Dump. Crea la capa ppr_biomes_dump, con columnas gid (valor único, creado
+    para cada Polygon), id, path y geom.
+
+03: Configuración de GRASS 7.0, haciendo la location y el mapset
+
+04: Importar la capa ppr_biomes_dump como "biomes" a la base de grass (MUY
+    LENTO!)
+
+05-07: Limpiar la capa biomes con el comando v.clean de grass (seguramente muy
+       lento también).
+
+
+
+Discontinuados: todos los que empiezan con X...
+
+X4: ST_DumpRings. Crea la capa ppr_biomes_dump_rings a partir de
+    ppr_biomes_dump, con columnas id, path, geom y p_geom, esta última siendo de
+    la clase geometry_dump[]
+

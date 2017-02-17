@@ -6,6 +6,11 @@
 v.in.ogr input=PG:dbname=biouy layer=ppr_biomes_dump output=biomes \
   geometry=geom -c -e
 
+# Notas:
+# -c Para evitar que "limpie" los polígonos, ya que es una operación que demora
+#    muchísimo y no la puedo controlar (ej: empieza por v.clean break...)
+# -e Extiende la region a la extensión del mapa a importar.
+
 
 #### Ejemplo de salida:
 # GRASS 7.0.3 (BioUy):~ > v.in.ogr input=PG:dbname=biouy layer=ppr_biomes_dump output=biomes geometry=geom -c -e

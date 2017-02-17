@@ -37,4 +37,6 @@ v.in.ogr input=PG:dbname=biouy layer=ppr_biomes_dump output=biomes \
 # Number of lines: 0
 # Number of boundaries: 10357167
 # Number of centroids: 6936731
-
+# WARNING: Number of incorrect boundaries: 201511
+# WARNING: Number of centroids outside area: 65214
+# WARNING: Number of duplicate centroids: 41818

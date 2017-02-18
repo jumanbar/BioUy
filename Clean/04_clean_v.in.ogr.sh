@@ -40,3 +40,4 @@ v.in.ogr input=PG:dbname=biouy layer=ppr_biomes_dump output=biomes \
 # WARNING: Number of incorrect boundaries: 201511
 # WARNING: Number of centroids outside area: 65214
 # WARNING: Number of duplicate centroids: 41818
+# Region for the current mapset updated 

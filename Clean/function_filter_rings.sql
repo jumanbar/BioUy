@@ -9,9 +9,10 @@ single Polygons.
 
 Im including that version at the end, inside comment markers.
 
-NOTE: I changed > for >= in the second WHERE statement
+OBSERVATION: I changed > for >= in the second WHERE statement
 
- */
+*/
+
 CREATE OR REPLACE FUNCTION filter_rings(geometry, DOUBLE PRECISION)
   RETURNS geometry AS
 $BODY$

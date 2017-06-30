@@ -1,0 +1,396 @@
+
+# Simplemente transcribí la salida:
+
+Intento de importar PaisRural.shp:
+(Sun Apr  9 07:00:39 2017)                                                      
+v.in.ogr input=/home/jmb/BioUy/SIG/Shape/paisrural/PaisRural.shp layer=PaisRural output=PaisRural
+Check if OGR layer <PaisRural> contains polygons...
+Warning 1: organizePolygons() received an unexpected
+geometry.
+Either a polygon with interior rings, or a polygon with less
+than 4 points,
+or a non-Polygon geometry.  Return arguments as a
+collection.
+Importing 250159 features (OGR layer <PaisRural>)...
+Warning 1: organizePolygons() received an unexpected
+geometry.
+Either a polygon with interior rings, or a polygon with less
+than 4 points,
+or a non-Polygon geometry.  Return arguments as a
+collection.
+WARNING: Degenerate island (3 vertices)
+WARNING: Feature (cat 59799): degenerated polygon (3 vertices)
+WARNING: Feature (cat 59800): degenerated polygon (3 vertices)
+WARNING: Feature (cat 59801): degenerated polygon (3 vertices)
+WARNING: Feature (cat 59802): degenerated polygon (3 vertices)
+WARNING: Feature (cat 59803): degenerated polygon (3 vertices)
+WARNING: Feature (cat 59804): degenerated polygon (3 vertices)
+WARNING: Feature (cat 154954): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155389): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155390): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155391): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155392): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155393): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155394): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155395): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155396): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155397): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155398): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155399): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155400): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155401): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155402): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155682): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155683): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155684): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155685): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155686): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155687): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155688): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155689): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155983): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155984): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155985): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155986): degenerated polygon (3 vertices)
+WARNING: Feature (cat 155987): degenerated polygon (3 vertices)
+WARNING: Feature (cat 156254): degenerated polygon (3 vertices)
+WARNING: Feature (cat 156255): degenerated polygon (3 vertices)
+WARNING: Feature (cat 156256): degenerated polygon (3 vertices)
+WARNING: Feature (cat 174747): degenerated polygon (3 vertices)
+WARNING: Feature (cat 175578): degenerated polygon (3 vertices)
+WARNING: Feature (cat 214808): degenerated polygon (3 vertices)
+WARNING: 1 feature without geometry skipped
+-----------------------------------------------------
+Registering primitives...
+427478 primitives registered
+3847647 vertices registered
+Number of nodes: 354464
+Number of primitives: 427478
+Number of points: 0
+Number of lines: 0
+Number of boundaries: 427478
+Number of centroids: 0
+Number of areas: -
+Number of isles: -
+-----------------------------------------------------
+Cleaning polygons
+-----------------------------------------------------
+Breaking polygons...
+Breaking polygons (pass 1: select break points)...
+Breaking polygons (pass 2: break at selected points)...
+-----------------------------------------------------
+Removing duplicates...
+-----------------------------------------------------
+Breaking boundaries...
+-----------------------------------------------------
+Removing duplicates...
+-----------------------------------------------------
+Cleaning boundaries at nodes...
+-----------------------------------------------------
+Breaking boundaries...
+-----------------------------------------------------
+Removing duplicates...
+-----------------------------------------------------
+Cleaning boundaries at nodes...
+-----------------------------------------------------
+Breaking boundaries...
+-----------------------------------------------------
+Removing duplicates...
+-----------------------------------------------------
+Cleaning boundaries at nodes...
+-----------------------------------------------------
+Merging boundaries...
+-----------------------------------------------------
+Removing dangles...
+-----------------------------------------------------
+Building areas...
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+278742 areas built
+5360 isles built
+Number of nodes: 594463
+Number of primitives: 1944947
+Number of points: 0
+Number of lines: 0
+Number of boundaries: 1944947
+Number of centroids: 0
+Number of areas: 278742
+Number of isles: 5360
+WARNING: Number of incorrect boundaries: 8
+-----------------------------------------------------
+Removing bridges...
+-----------------------------------------------------
+Registering primitives...
+766290 primitives registered
+2847973 vertices registered
+Building areas...
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+278747 areas built
+5355 isles built
+Attaching islands...
+Number of nodes: 492880
+Number of primitives: 766290
+Number of points: 0
+Number of lines: 0
+Number of boundaries: 766290
+Number of centroids: 0
+Number of areas: 278747
+Number of isles: 5355
+WARNING: Number of incorrect boundaries: 8
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+WARNING: Vect_get_point_in_poly_isl(): collapsed area
+WARNING: Unable to calculate area centroid
+-----------------------------------------------------
+Finding centroids for OGR layer <PaisRural>...
+Warning 1: organizePolygons() received an unexpected
+geometry.
+Either a polygon with interior rings, or a polygon with less
+than 4 points,
+or a non-Polygon geometry.  Return arguments as a
+collection.
+-----------------------------------------------------
+Writing centroids...
+WARNING: 18000 areas represent more (overlapping) features, because polygons overlap in input layer(s). Such areas are linked to more than 1 row in attribute table. The number of features for those areas is stored as category in layer 2
+-----------------------------------------------------
+250213 input polygons
+Total area: 1.72025E+11 (278747 areas)
+Overlapping area: 1.54167E+07 (18000 areas)
+Area without category: 3.88486E+08 (10356 areas)
+-----------------------------------------------------
+Copying features...
+Building topology for vector map <PaisRural@jmb>...
+Registering primitives...
+1034591 primitives registered
+3116274 vertices registered
+Building areas...
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+WARNING: Area of size = 0.0 ignored
+278747 areas built
+5355 isles built
+Attaching islands...
+Attaching centroids...
+Number of nodes: 492880
+Number of primitives: 1034591
+Number of points: 0
+Number of lines: 0
+Number of boundaries: 766290
+Number of centroids: 268301
+Number of areas: 278747
+Number of isles: 5355
+WARNING: Number of incorrect boundaries: 8
+-----------------------------------------------------
+Some input polygons are overlapping each other.
+If overlapping is not desired, the data need to be cleaned.
+The input could be cleaned by snapping vertices to each other.
+Estimated range of snapping threshold: [1e-08, 1]
+Try to import again, snapping with at least 1e-08: 'snap=1e-08'
+(Sun Apr  9 07:03:50 2017) Command finished (3 min 11 sec)

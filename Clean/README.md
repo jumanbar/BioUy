@@ -244,11 +244,16 @@ Cargar capa `bfilt_snap` en QGIS, guardar como shape
 (`bfilt_snap.sh`) y luego exportar a raster 10 m de resolución, usando cat de
 ambiente como columna para los valores.
 
-    gdal_rasterize -a id -tr 10.0 10.0 -l bfilt_snap \
+    gdal_rasterize -a id -tr 10.0 10.0 -ot Int32 -l bfilt_snap \
       /home/jmb/BioUy/SIG/Shape/bfilt_snap/bfilt_snap.shp \
       /home/jmb/BioUy/SIG/Raster/bfilt_rast.tiff
 
 Son 22 GB!! Lo borré más tarde.
+
+**Nota**: esto fue la primera vez, ahora el comando lo modifiqué para que exporte
+con Int32 (antes era Float64, el valor por defecto).
+*Espero que este cambio no afecte a los pasos subsiguientes. No verifiqué que
+funcione todo bien.*
 
 ## Preparar GRASS
 
@@ -278,6 +283,7 @@ Con el GRASS abierto en la location BioUy y mapset jmb, correr (en la terminal):
 Región de cálculos ajustada al raster en cuestión:
 
     g.region raster=bfilt_rast -p
+    g.region save=region_x_defecto # Para futuro uso
 
 Seleccionar areas mayores a 200 mil hás: es decir, todo lo que rodea al mapa de
 Uruguay. Esto lo usaré después para recortar el resultado de `r.grow.distance`
@@ -319,60 +325,72 @@ Que se visualice mejor:
 
     r.colors -e map=bfilt_rast_reclass@jmb color=bgyr
 
+## Padrones a raster
+
 Exportar a raster el shape de padrones (`gdal_rasterize`... igual que antes).
+
+    gdal_rasterize -a id -tr 10.0 10.0 -ot Int32 -l PaisRural \
+      /home/jmb/BioUy/SIG/Shape/paisrural/PaisRural.shp \
+      /home/jmb/BioUy/SIG/Raster/PaisRural.tiff
+
 
 Importar dicho raster a GRASS:
 
-    r.in.gdal input=/home/jmb/BioUy/SIG/Raster/padrones_rast.tiff\
-     output=padrones -o
+    r.in.gdal input=/home/jmb/BioUy/SIG/Raster/PaisRural.tiff output=PaisRural \
+      --overwrite -o
 
     # Over-riding projection check
     # Proceeding with import of 1 raster bands...
     # Importing raster map <padrones>...
     # Successfully finished
 
-Ahora se usa el archivo creado antes (`tabla_reclass.txt`)... En este caso, tal
-ves porque usé el GUI, aparece un archivo temporal ("4829.0", ver abajo).
+Debido a que usé la opción `-ot Int32` al convertir el Shape en GeoTIFF (con
+`gdal_rasterize`), ahora el raster PaisRural en GRASS es CELL (números enteros,
+en lugar de double precision, DCELL).
 
-    # (Mon Apr 10 18:24:55 2017)
+## Corregir el problema del padrón 0
 
-    r.recode --verbose input=padrones@jmb output=padrones_int \
-      rules=/home/jmb/SIG/grassdata/BioUy/jmb/.tmp/gis-probides/4829.0
+Ocurre que en donde no hay datos (ej: cauces de ríos, rutas, etc),
+`gdal_rasterize` asigna el valor 0. Esto es un problema, porque también hay un
+padrón que tiene id = 0. Para solucionarlo, la estrategia es hacer un mapa chico
+en donde está dicho padrón: en este mapita sólo aparece el padrón 0, el resto es
+"no data" (el mapa chico se llama *padron_arreglao*).
 
-    # (Mon Apr 10 18:26:54 2017) Command finished (1 min 59 sec)
+Luego le saco todos los píxeles con valor 0 al mapa original (PaisRural) y los
+convierto en NULL. Esto elimina también el padrón 0, pero no importa, porque
+luego combino los mapas *PaisRural* y *padron_arreglao*, de forma que al final,
+lo único que tiene valor 0 en el raster resultante, es el padrón 0.
 
-- - -
+### Mapa *padron_arreglao*
 
-# Intercepciones entre capas ... PASO MEJORABLE?
+    g.region n=6167861.71531 s=6165363.81502 e=626792.772268 w=622912.700483
+    g.region save=padron_cero
 
-Para cruzar los padrones con el raster de los ambientes y con el raster de las
-cartas del SGM (la cual genero más abajo), convertí el raster de
-padrones a un vectorial en el que cada pixel es un punto... Hay buenas chances
-de que no sea la opción más óptima, pero es lo que me sirvió en el momento.
+El siguiente comando hace una copia del mapa, en la nueva region (pequeña), en
+la que los valores > 0 se convierten en NULL. Al final sólo quedan los píxeles
+con valor 0:
 
-    # (Mon Apr 10 19:36:35 2017)
+    r.mapcalc expression='padron_arreglao = if(PaisRural@jmb, null())' \
+      --overwrite
 
-    r.to.vect -v --overwrite input=padrones_int@jmb \
-      output=padrones_point type=point column=pad_id
+### Pasar a NULL todos los 0 del PaisRural
 
-    # WARNING: Vector map <padrones_point> already exists and will be overwritten
-    # Extracting points...
-    # ERROR: Category index is not up to date
+    g.region region=region_x_defecto@jmb
 
-    # (Tue Apr 11 03:57:07 2017) Command finished (161 min 32 sec)
+    r.null map=PaisRural@jmb setnull=0
 
-La capa `padrones_point` pesa 49 GB !!
+### Emparchar los dos rasters
 
-    # (Tue Apr 11 10:02:01 2017)                                                      
+La función `r.patch` junta dos rasters de la siguiente manera: si en alguno de
+los dos mapas hay NULL, entonces se llena con el valor del mapa que no tiene
+NULL. En caso de que en el pixel el valor es NULL para todos los mapas, queda
+NULL.
 
-    v.in.ogr input=/home/jmb/BioUy/SIG/Shape/utm_grid2 layer=utm_grid2\
-     output=utm_grid2 --overwrite encoding=utf8
+    r.patch --overwrite input=PaisRural@jmb,padron_arreglao@jmb \
+      output=PaisRural_fix
 
-    # Check if OGR layer <utm_grid2> contains polygons...
-    # WARNING: Vector map <utm_grid2> already exists and will be overwritten
-    # Importing 302 features (OGR layer <utm_grid2>)...
 
-    # (continúa....)
+## Cartas SGM
 
 En caso de las cartas SGM, convertí a raster también, pero esta vez con GRASS,
 ya que no es una capa tan complicada.
@@ -380,270 +398,145 @@ ya que no es una capa tan complicada.
     v.to.rast --overwrite input=utm_grid2@jmb output=utm_grid2 use=attr\
      attribute_column=gid label_column=carta
 
+- - -
 
-### Acá es donde cruzo varias capas:
+# Intercepciones entre capas
 
-    r.what -n -f -c --overwrite --verbose\
-     map=bfilt_rast_reclass@jmb,padrones_int@jmb,utm_grid2@jmb\
-     points=padrones_point@jmb output=/home/jmb/BioUy/output_r.what.csv\
-     separator=comma
+Padrones x Ambientes:
 
-    # (Wed Apr 12 01:35:04 2017) Command finished (923 min 59 sec)
-    # 15 horas!
+    r.stats -a -n --overwrite input=PaisRural_fix@jmb,bfilt_rast_reclass@jmb \
+      output=/home/jmb/BioUy/padrones_x_ambientes.csv separator=comma
+
+Padrones x Cartas SGM:
+
+    r.stats -a -n --overwrite input=PaisRural_fix@jmb,utm_grid2@jmb \
+      output=/home/jmb/BioUy/padrones_x_sgm.csv separator=comma
 
 - - -
 
 # Importar resultados a PostgreSQL
 
-## Manejar la salida de r.what
+## Padrones x Ambientes
 
-Lo primero fue sacar algunas columnas que no nos interesan:
-
-    cut -d, -f1,2,3,7 --complement output_r.what.csv > output_r.what2.csv
-
-Hacer un encabezado:
-
-    echo "biome_id,biome_code,padron_id,sgm_id,sgm_code" > header.txt
-
-Cambiar el encabezado original por el que nuevo:
-
-    tail -n +2 output_r.what2.csv | cat header.txt - > output_r.what3.csv
-
-Hay que detectar y arreglar errores:
-
-    egrep "\*" output_r.what3.csv -n > errores.txt
-
-El archivo de arriba tiene los números de línea, por lo que se puede armar un
-`sed` que modifique específicamente esos casos (cambiando un asterisco por -1):
-
-    sed -e '52276355s/\*/-1/g' \
-        -e '53738318s/\*/-1/g' \
-        -e '56653927s/\*/-1/g' \
-        -e '64177173s/\*/-1/g' \
-        -e '597387987s/\*/-1/g' \
-        -e '630807519s/\*/-1/g' \
-        -e '1008961510s/\*/-1/g' \
-        -e '1064967730s/\*/-1/g' \
-        output_r.what3.csv > output_r.what4.csv
-    
-Estos comandos los escribí acá, pero no estoy seguro de haberlos ejecutado.
-Serían para borrar las líneas con error en `output_r.what4.csv`
-
-    sed -n '52276355p' output_r.what4.csv
-    sed -n '53738318p' output_r.what4.csv
-    sed -n '56653927p' output_r.what4.csv
-    sed -n '64177173p' output_r.what4.csv
-    sed -n '597387987p' output_r.wat4.csv
-    sed -n '630807519p' output_r.wat4.csv
-    sed -n '1008961510p' output_r.what4.csv
-    sed -n '1064967730p' output_r.what4.csv
-
-### Partirlo en pedazos
-
-Ahora que el formato está bien, hay que partirlo en pedazos más chicos (20
-partes, para ser precisos), y manejables (ver abajo en COPY):
-
-    split -n l/20 -d -u output_r.what4.csv out_what_ --additional-suffix=.txt
-
-### Ver el rango de valores de la capa raster:
-
-    r.describe -r map=padrones_int@jmb
-    0
-    1 thru 250158
-    *
-
-El asterisco sería los NULL, creo.
-
-Ahora en PostgreSQL, creo una tabla en donde voy a meter los valores de
-output_r.what4.csv:
-
-    CREATE TABLE output_what (
-      biome_id smallint, 
-      biome_code character varying(20),
+Tabla temporal:
+    DROP TABLE padbio_import;
+    CREATE TABLE padbio_import (
       padron_id integer,
-      utm_id smallint,
-      utm_code character varying(3)
+      biome_id smallint,
+      area_mc numeric(12,3)
     );
-
-### Por qué partirlo en 20?
-
-El archivo entero (de 46 GB), no entra:
-
-    COPY output_what FROM '/home/jmb/BioUy/output_r.what4.csv' DELIMITER ',' CSV HEADER;
-    ERROR:  could not extend file "base/25496/600076.7": No space left on device
-    HINT:  Check free disk space.
-    CONTEXT:  COPY output_what, line 1001
-
-En ese momento la base de datos estaba en el disco raíz de la máquina (archivos
-del sistema operativo), que es una partición distinta a la del `~`, por esto es
-que no me daba el espacio. No debería ser problema si hay suficiente espacio en
-el disco en que está la base de datos.
-
-Este es un vistazo de cómo se ve el `output_r.what4.csv`:
-
-    biome_id, biome_code,      padron_id,  sgm_id, sgm_code
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    32,       cuerpos loticos, 0,          193,    P12
-    115,      PrPSPRNNM,       101899,     280,    M15
-    115,      PrPSPRNNM,       101899,     280,    M15
-    115,      PrPSPRNNM,       101899,     280,    M15
-    115,      PrPSPRNNM,       101899,     280,    M15
-    123,      suelo desnudo,   101899,     280,    M15
-    123,      suelo desnudo,   101899,     280,    M15
-    123,      suelo desnudo,   101899,     280,    M15
-    123,      suelo desnudo,   101899,     280,    M15
-    123,      suelo desnudo,   101899,     280,    M15
     
-## Pasos iterativos para importar los datos
+    COPY padbio_import FROM '/home/jmb/BioUy/padrones_x_ambientes.csv' DELIMITER ',' CSV;
+    -- COPY 708835 <- Antes de arreglar el problema de padrones repetidos
+    --                (padrones_int)
+    -- COPY 710465 <- Lógicamente, ahora hay más combinaciones padrón/ambiente
 
-Para resolver el problema de espacio en disco, resolví iterar un procedimiento:
+Código útil para chequear que estén bien los datos:
 
-1. Meter datos en `output_what` (tabla en mi base PostgreSQL)
-2. Hacer un par de Group By de esos datos, y mandarlos para tablas temporales.
-   Serían Group By por padrones + biomas y por padrones + sgm.
-3. Las tablas temporales se agrandan con cada pedazo del `output_r.what4.csv`
-   original que importo al PostgreSQL.
-4. Una vez importados todos los datos, hago tablas definitivas, volviendo a
-   agrupar por padrón + biome y padrón + sgm.
-
-De nuevo, la complejidad del procedimiento no sería necesaria, en teoría, si la
-base estuviera en una partición de disco lo suficientemente grande.
-
-### 1. Importar datos crudos en output_what
-
-    TRUNCATE output_what;
-    COPY output_what FROM '/home/jmb/BioUy/out_what_00.txt' DELIMITER ',' CSV HEADER;
-
-    COPY 94967658
-         91887637
-         89170614
-         88029812
-         87024329
-         86922890
-         87107413
-         86696040
-    (continúa...)
-
-Estos no andaban por falta de espacio:
-
-    CREATE INDEX owhat_pad_biomes_ix ON output_what (padron_id, biome_id);
-    CREATE INDEX owhat_pad_ix ON output_what (padron_id);
-
-### 2 Agrupar datos iniciando tablas temporales
-
-Se crean dos tablas que van a ser el primer paso para agrupar la salida de
-`output_r.what4.csv`. El agrupamiento es haciendo `count(*)` de las filas.
-Sabiendo que dada fila corresponde a un pixel de 10m x 10m, el count es una
-forma de llegar al área total.
-
-Comando de Group By con padrón + bioma, crea la tabla temporal `pad_biome`:
-
-    CREATE TABLE pad_biome AS
-    SELECT padron_id, biome_id, count(*) AS n
-      FROM output_what
-     GROUP BY padron_id, biome_id;
-
-    SELECT 19265
-    INSERT 0 22178
-             26928
-             22644
-             23505
-    (continúa...)
- 
-Comando de Group By con padrón + sgm, crea la tabla temporal `pad_sgm`:
-
-    CREATE TABLE pad_sgm AS
-    SELECT padron_id, utm_id AS sgm_id, count(*) AS n
-      FROM output_what
-     GROUP BY padron_id, utm_id;
-
-    SELECT 6624
-    INSERT 0 7969
-             9164
-             8041
-             8215
-    (continúa...)
-
-### 3 Agregar datos a las tablas temporales
-
-Acá es donde se da el verdadero ciclo de importación. Primero se vacía y vuelve
-a llenar la tabla `output_what`:
-
-    TRUNCATE output_what;
-    COPY output_what FROM '/home/jmb/BioUy/out_what_05.txt' DELIMITER ',' CSV;
-
-A continuación se agregan datos a las tablas temporales, usando comandos `GROUP
-BY` correspondientes:
-
-    INSERT INTO pad_biome (padron_id, biome_id, n)
-    SELECT padron_id, biome_id, count(*) AS n
-      FROM output_what
-     GROUP BY padron_id, biome_id;
+    SELECT
+     padron_id, biome_id, area_mc, pr.id, 
+     pr.padron, pr.depto, ppr.id, ppr.code AS biome
+      FROM padbio_import pi 
+      JOIN padron_ref pr ON pi.padron_id = pr.id 
+      JOIN ppr_sitfin ppr ON pi.biome_id = ppr.id 
+     WHERE pi.padron_id = 215666;
     
-    INSERT INTO  pad_sgm (padron_id, sgm_id, n)
-    SELECT padron_id, utm_id AS sgm_id, count(*) AS n
-      FROM output_what
-     GROUP BY padron_id, utm_id;
 
-Estos pasos, por ser engorrosos de repetir 19 veces, se pueden hacer con los
-scripts:
+Ahora sí, hacemos la tabla `padron_biome` definitiva:
 
-- `template.sql`: tiene los comandos SQL para importar a PostgreSQL.
-- `master.sh`: edita `template.sql` y loopea para importar todo.
-
-### 4 Agrupar todo en tablas definitivas
-
-Acá agrupo las entradas de las tablas temporales, `pad_biome` y `pad_sgm`, y al
-mismo tiempo creo las tablas definitivas, `padron_biome` y `padron_sgm`
-correspondientes:
-
+    DROP TABLE padron_biome; -- Si estamos seguros...
+    
+    CREATE SEQUENCE padron_biome_id_seq START 1;
+    ALTER  SEQUENCE padron_biome_id_seq RESTART WITH 1;
+    
     CREATE TABLE padron_biome AS
-    SELECT padron_id, biome_id, sum(n) AS N
-      FROM pad_biome
-     GROUP BY padron_id, biome_id;
-    /*
-     SELECT COUNT(*) FROM pad_biome;
-     --> 730266
-     SELECT COUNT(*) FROM padron_biome;
-     --> 708953
-    */
+    SELECT
+      pi.padron_id,
+      pi.biome_id,
+      pi.area_mc / 1e4 AS area_has, -- Importante: el área está en metros cuad.
+      nextval('padron_biome_id_seq') AS id
+      FROM padbio_import pi;
+    
+    ALTER TABLE padron_biome ALTER COLUMN area_has TYPE numeric(8,3);
+    
+    ALTER TABLE public.padron_biome
+      ADD CONSTRAINT padbiome_pkey PRIMARY KEY (id);
+    
+    ALTER TABLE public.padron_biome
+      ADD CONSTRAINT padbio_pad_fkey FOREIGN KEY (padron_id) REFERENCES public.padron_ref (id)
+       ON UPDATE NO ACTION ON DELETE NO ACTION;
+    CREATE INDEX fki_padbio_pad_fkey
+      ON public.padron_biome(padron_id);
+    
+    ALTER TABLE public.padron_biome
+      ADD CONSTRAINT padbio_bio_fkey FOREIGN KEY (biome_id) REFERENCES public.ppr_sitfin (id)
+       ON UPDATE NO ACTION ON DELETE NO ACTION;
+    CREATE INDEX fki_padbio_bio_fkey
+      ON public.padron_biome(biome_id);
+    
+## Padrones x Carta SGM
 
-Como corresponde, `padron_biome` tiene menos datos que `pad_biome`. Lo mismo
-pasa con las tablas correspondientes a padrón + sgm:
+Ahora la otra tabla temporal:
+    
+    DROP TABLE padsgm_import;
+    CREATE TABLE padsgm_import (
+      padron_id integer,
+      sgm_id smallint,
+      area_mc numeric(12,3)
+    );
+    
+    COPY padsgm_import FROM '/home/jmb/BioUy/padrones_x_sgm.csv' DELIMITER ',' CSV;
+    -- COPY 265857
+    -- COPY 266226 <- Lo mismo que antes..
+    
+Un par de líneas para verificar que no haya problemas:
+    
+    SELECT padron_id, count(*) 
+      FROM padsgm_import 
+     GROUP BY padron_id HAVING count(*) > 1;
+    
+    SELECT * FROM padsgm_import WHERE padron_id IN (
+     220779, 84487, 52869, 37400, 32922, 55592, 181769,
+     181283, 69586, 45553, 180356, 64267, 174600, 65066,
+     76660, 44193, 57774, 28873, 26637, 121751, 87011,
+     125536, 68154, 15775, 240048, 183604, 246281, 128697
+     );
+    
+
+Ahora sí, la tabla `padron_sgm` definitiva:
+
+    DROP TABLE padron_sgm; -- Si estamos seguros...
+    
+    CREATE SEQUENCE padron_sgm_id_seq START 1;
+    ALTER  SEQUENCE padron_sgm_id_seq RESTART WITH 1;
     
     CREATE TABLE padron_sgm AS
-    SELECT padron_id, sgm_id, sum(n) AS N
-      FROM pad_sgm
-     GROUP BY padron_id, sgm_id;
-    /*
-     SELECT COUNT(*) FROM pad_sgm;
-     --> 274839
-     SELECT COUNT(*) FROM padron_sgm;
-     --> 266163
-    */
-
-Limpieza, si estamos muy seguro de que quedó todo bien:
-
-    DROP TABLE pad_biome;
-    DROP TABLE pad_sgm;
-
-También modifico las tablas definitivas. La columna "n" ahora tendrá el área de
-cada entrada medida en hectáreas:
-
-    UPDATE padron_biome SET n = n / 100;
-    ALTER TABLE padron_biome RENAME COLUMN n TO area_has;
-    ALTER TABLE padron_biome ALTER area_has SET DATA TYPE NUMERIC(9, 3);
-
-    UPDATE padron_sgm SET n = n / 100;
-    ALTER TABLE padron_sgm RENAME COLUMN n TO area_has;
-    ALTER TABLE padron_sgm ALTER area_has SET DATA TYPE NUMERIC(8, 3);
+    SELECT
+      pi.padron_id,
+      pi.sgm_id,
+      pi.area_mc / 1e4 AS area_has,
+      nextval('padron_sgm_id_seq') AS id
+      FROM padsgm_import pi;
+    
+    ALTER TABLE padron_sgm ALTER COLUMN area_has TYPE numeric(8,3);
+    
+    ALTER TABLE public.padron_sgm
+      ADD CONSTRAINT padsgm_pkey PRIMARY KEY (id);
+    
+    ALTER TABLE public.padron_sgm
+      ADD CONSTRAINT padsgm_pad_fkey FOREIGN KEY (padron_id) REFERENCES public.padron_ref (id)
+       ON UPDATE NO ACTION ON DELETE NO ACTION;
+    CREATE INDEX fki_padsgm_pad_fkey
+      ON public.padron_sgm(padron_id);
+    
+    ALTER TABLE public.padron_sgm
+      ADD CONSTRAINT padsgm_sgm_fkey FOREIGN KEY (sgm_id) REFERENCES
+      public.utm_grid2 (gid)
+       ON UPDATE NO ACTION ON DELETE NO ACTION;
+    CREATE INDEX fki_padsgm_sgm_fkey
+      ON public.padron_sgm(sgm_id);
+    
+    DROP TABLE padsgm_import;
 
 - - -
 
@@ -747,3 +640,53 @@ Y luego el id de las cartas sgm, vinculando `utm_grid2` con `padron_sgm`:
     CREATE INDEX fki_padsgm_sgm_fkey
       ON public.padron_sgm(sgm_id);
 
+
+## Nota al final:
+
+Para hacer una distribución de una especie, se puede usar mapcalc para
+
+Estos son los datos para el Coendú (según la página del SNAP):
+
+AMBIENTES:
+PaSSLRNHA, BoOMMMNNA, BoPSLENHA, RiPPPLTNN, BoOMLRNNM, BoOSLRNHA, BoPMMMNNA,
+BoQ, BoSSLENHA, BoSSLRNHA, BoPSLRNHA, BoOSLENHA, RiPPPLINN, BoPMLRNNM, PaSMLRNNM
+
+CARTAS SGM:
+A17, B16, B17, B18, C13, C14, C15, C16, C17, C18, D12, D13, D14, D15, D16, D17,
+D18, E10, E11, E12, E13, E14, E15, E16, E17, E18, F10, F11, F12, F13, F14, F15,
+F16, F17, F18, F9, G10, G11, G12, G13, G14, G15, G16, G17, G18, G8, G9, H10,
+H11, H12, H13, H14, H15, H16, H17, H18, H7, H8, H9, J10, J11, J12, J13, J14,
+J15, J16, J17, J6, J7, J8, J9, K10, K11, K12, K13, K14, K15, K16, K4, K5, K6,
+K7, K8, K9, L10, L11, L12, L13, L14, L15, L3, L4, L5, L6, L7, L8, L9, M10, M11,
+M12, M13, M14, M15, M3, M4, M5, M6, M7, M8, M9, N10, N11, N12, N13, N14, N15,
+N3, N4, N5, N6, N7, N8, N9, O13, O14, O15, O27, O4, O5, O6, O7, O8
+
+    SELECT 'bfilt_reclass == ' || id || ' ||' from ppr_sitfin 
+     WHERE code IN (
+       'PaSSLRNHA', 'BoOMMMNNA', 'BoPSLENHA', 'RiPPPLTNN', 'BoOMLRNNM',
+       'BoOSLRNHA', 'BoPMMMNNA', 'BoQ', 'BoSSLENHA', 'BoSSLRNHA', 'BoPSLRNHA',
+       'BoOSLENHA', 'RiPPPLINN', 'BoPMLRNNM', 'PaSMLRNNM'
+       )
+     ORDER BY id;
+
+    SELECT 'utm_grid2 == ' || gid || ' ||' from utm_grid2 
+     WHERE carta IN (
+       'A17', 'B16', 'B17', 'B18', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'D12',
+       'D13', 'D14', 'D15', 'D16', 'D17', 'D18', 'E10', 'E11', 'E12', 'E13', 'E14',
+       'E15', 'E16', 'E17', 'E18', 'F10', 'F11', 'F12', 'F13', 'F14', 'F15', 'F16',
+       'F17', 'F18', 'F9', 'G10', 'G11', 'G12', 'G13', 'G14', 'G15', 'G16', 'G17',
+       'G18', 'G8', 'G9', 'H10', 'H11', 'H12', 'H13', 'H14', 'H15', 'H16', 'H17',
+       'H18', 'H7', 'H8', 'H9', 'J10', 'J11', 'J12', 'J13', 'J14', 'J15', 'J16',
+       'J17', 'J6', 'J7', 'J8', 'J9', 'K10', 'K11', 'K12', 'K13', 'K14', 'K15',
+       'K16', 'K4', 'K5', 'K6', 'K7', 'K8', 'K9', 'L10', 'L11', 'L12', 'L13', 'L14',
+       'L15', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'M10', 'M11', 'M12', 'M13',
+       'M14', 'M15', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'N10', 'N11', 'N12',
+       'N13', 'N14', 'N15', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8', 'N9', 'O13', 'O14',
+       'O15', 'O27', 'O4', 'O5', 'O6', 'O7', 'O'
+       )
+     ORDER BY gid;
+
+La idea era tirar esos resultados en el r.mapcalc de GRASS. Hice una prueba,
+pero parecía ir demasiado lento, así que no seguí. De todas formas, esto tiene
+el problema de que corta los límites con las cartas, en vez de abarcar todos los
+parches de ambientes adecuados que tocan las cartas en algún punto.

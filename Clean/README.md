@@ -462,18 +462,6 @@ Ahora sí, hacemos la tabla `padron_biome` definitiva:
     ALTER TABLE public.padron_biome
       ADD CONSTRAINT padbiome_pkey PRIMARY KEY (id);
     
-    ALTER TABLE public.padron_biome
-      ADD CONSTRAINT padbio_pad_fkey FOREIGN KEY (padron_id) REFERENCES public.padron_ref (id)
-       ON UPDATE NO ACTION ON DELETE NO ACTION;
-    CREATE INDEX fki_padbio_pad_fkey
-      ON public.padron_biome(padron_id);
-    
-    ALTER TABLE public.padron_biome
-      ADD CONSTRAINT padbio_bio_fkey FOREIGN KEY (biome_id) REFERENCES public.ppr_sitfin (id)
-       ON UPDATE NO ACTION ON DELETE NO ACTION;
-    CREATE INDEX fki_padbio_bio_fkey
-      ON public.padron_biome(biome_id);
-    
 ## Padrones x Carta SGM
 
 Ahora la otra tabla temporal:
@@ -522,19 +510,6 @@ Ahora sí, la tabla `padron_sgm` definitiva:
     
     ALTER TABLE public.padron_sgm
       ADD CONSTRAINT padsgm_pkey PRIMARY KEY (id);
-    
-    ALTER TABLE public.padron_sgm
-      ADD CONSTRAINT padsgm_pad_fkey FOREIGN KEY (padron_id) REFERENCES public.padron_ref (id)
-       ON UPDATE NO ACTION ON DELETE NO ACTION;
-    CREATE INDEX fki_padsgm_pad_fkey
-      ON public.padron_sgm(padron_id);
-    
-    ALTER TABLE public.padron_sgm
-      ADD CONSTRAINT padsgm_sgm_fkey FOREIGN KEY (sgm_id) REFERENCES
-      public.utm_grid2 (gid)
-       ON UPDATE NO ACTION ON DELETE NO ACTION;
-    CREATE INDEX fki_padsgm_sgm_fkey
-      ON public.padron_sgm(sgm_id);
     
     DROP TABLE padsgm_import;
 
@@ -622,10 +597,6 @@ Las mismas consideraciones con los id de las cartas sgm. Primero, vincular
     CREATE INDEX fki_padsgm_pad_fkey
       ON public.padron_sgm(padron_id);
 
-Decidí eliminar aquellas entradas en los que el id del padrón figuraba como -1:
-
-    DELETE FROM padron_sgm WHERE sgm_id = -1;
-
 ## Vínculo: padron_sgm -- utm_grid2
 
 Y luego el id de las cartas sgm, vinculando `utm_grid2` con `padron_sgm`:
@@ -640,10 +611,9 @@ Y luego el id de las cartas sgm, vinculando `utm_grid2` con `padron_sgm`:
     CREATE INDEX fki_padsgm_sgm_fkey
       ON public.padron_sgm(sgm_id);
 
-
 ## Nota al final:
 
-Para hacer una distribución de una especie, se puede usar mapcalc para
+Para hacer una distribución de una especie, se puede usar `r.mapcalc` para
 
 Estos son los datos para el Coendú (según la página del SNAP):
 
@@ -686,7 +656,7 @@ N3, N4, N5, N6, N7, N8, N9, O13, O14, O15, O27, O4, O5, O6, O7, O8
        )
      ORDER BY gid;
 
-La idea era tirar esos resultados en el r.mapcalc de GRASS. Hice una prueba,
+La idea era tirar esos resultados en el `r.mapcalc` de GRASS. Hice una prueba,
 pero parecía ir demasiado lento, así que no seguí. De todas formas, esto tiene
 el problema de que corta los límites con las cartas, en vez de abarcar todos los
 parches de ambientes adecuados que tocan las cartas en algún punto.

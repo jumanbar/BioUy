@@ -87,21 +87,23 @@ Web Page: http://www.spatialdbadvisor.com/postgis_tips_tricks/92/filtering-rings
 
 Tiene una modificación del original: en vez de `> $2`, cambié por `>= $2`.
 
-    CREATE OR REPLACE FUNCTION filter_rings(geometry, DOUBLE PRECISION)
-      RETURNS geometry AS
-    $BODY$
-    SELECT ST_MakePolygon((/* Get outer ring of polygon */
-            SELECT ST_ExteriorRing(geom) AS outer_ring
-              FROM ST_DumpRings($1)
-              WHERE path[1] = 0 /* ie the outer ring */
-            ),  ARRAY(/* Get all inner rings > a particular area */
-            SELECT ST_ExteriorRing(geom) AS inner_rings
-              FROM ST_DumpRings($1)
-              WHERE path[1] > 0 /* ie not the outer ring */
-                AND ST_Area(geom) >= $2
-            ) ) AS final_geom
-    $BODY$
-      LANGUAGE 'sql' IMMUTABLE;
+```sql
+CREATE OR REPLACE FUNCTION filter_rings(geometry, DOUBLE PRECISION)
+  RETURNS geometry AS
+$BODY$
+SELECT ST_MakePolygon((/* Get outer ring of polygon */
+        SELECT ST_ExteriorRing(geom) AS outer_ring
+          FROM ST_DumpRings($1)
+          WHERE path[1] = 0 /* ie the outer ring */
+        ),  ARRAY(/* Get all inner rings > a particular area */
+        SELECT ST_ExteriorRing(geom) AS inner_rings
+          FROM ST_DumpRings($1)
+          WHERE path[1] > 0 /* ie not the outer ring */
+            AND ST_Area(geom) >= $2
+        ) ) AS final_geom
+$BODY$
+  LANGUAGE 'sql' IMMUTABLE;
+```
 
 ### Usar la función para eliminar áreas pequeñas
 
@@ -260,10 +262,12 @@ funcione todo bien.*
 Instalé GRASS 7.0 para hacer parte del proceso. Para crear un location + mapset,
 se pueden correr estos comandos en la terminal:
 
-    User=$(whoami) # jmb
-    # Crear nueva location con el código EPSG (WGS84 + UTM21S: 32721):
-    grass70 -c epsg:32721 /home/$User/grassdata/BioUy
-    grass70 -c /home/$User/grassdata/BioUy/$User
+```bash
+User=$(whoami) # jmb
+# Crear nueva location con el código EPSG (WGS84 + UTM21S: 32721):
+grass70 -c epsg:32721 /home/$User/grassdata/BioUy
+grass70 -c /home/$User/grassdata/BioUy/$User
+```
 
 ## Importar a GRASS
 

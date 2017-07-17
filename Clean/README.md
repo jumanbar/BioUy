@@ -237,16 +237,17 @@ multipolygon fueron dumpeados ("multi to single")
 
 Además usa la función `ST_SnapToGrid`, para reducir los errores...
 
-También toma `cod_sitfin` de `ppr_sitfin`, recién creada.
+También toma `cod_sitfin` de la columna "code" de la tabla `bioma_ref`, recién
+creada.
 
 ```sql
 CREATE TABLE bfilt_snap AS
 SELECT bf.gid, bf.id, bf.path, 
-       k.cod_sitfin, s.id AS biome_id, 
+       k.cod_sitfin, s.id AS bioma_id, 
        ST_SnapToGrid(bf.geom, 0.05) AS geom
   FROM ppr_biomes_dump_filtered bf
   LEFT JOIN ppr_biomes_bak k ON bf.id = k.id
-  LEFT JOIN ppr_sitfin s     ON k.cod_sitfin = s.code;
+  LEFT JOIN bioma_ref s     ON k.cod_sitfin = s.code;
 -- SELECT 431289
 
 ALTER TABLE bfilt_snap ADD PRIMARY KEY (gid);
@@ -258,7 +259,7 @@ Comprobar que está todo en orden:
 SELECT bf.gid, bf.id, bf.path, b.id, b.cod_sitfin, st.id AS biome_code 
   FROM bfilt_snap AS bf 
   LEFT JOIN ppr_biomes_bak b ON bf.id = b.id
-  LEFT JOIN ppr_sitfin st ON b.cod_sitfin = st.code;
+  LEFT JOIN bioma_ref st ON b.cod_sitfin = st.code;
 ```
 
 Cambié los tamaños de las columnas, no me acuerdo por qué (acá tengo dudas de en
@@ -266,7 +267,7 @@ qué momento lo hice...).
 
 ```sql
 alter table bfilt_snap add column cod_sitfin character varying(50);
-alter table bfilt_snap add column biome_id bigint;
+alter table bfilt_snap add column bioma_id bigint;
 ```
 
 Límites en coordenadas del mapa `bfilt_snap`:
@@ -363,8 +364,8 @@ r.grow.distance --overwrite input="bfilt_rast@jmb" \
 la tabla se obtiene con una consulta sql (desde el psql):
 
 ```sql
-SELECT DISTINCT id || ' = ' || biome_id || ' ' || cod_sitfin 
-  FROM (SELECT DISTINCT id, biome_id, cod_sitfin 
+SELECT DISTINCT id || ' = ' || bioma_id || ' ' || cod_sitfin 
+  FROM (SELECT DISTINCT id, bioma_id, cod_sitfin 
           FROM bfilt_snap 
          ORDER BY id) AS o \g tabla_reclass.txt
 ```
@@ -460,12 +461,31 @@ r.patch --overwrite input=PaisRural@jmb,padron_arreglao@jmb \
 
 ## Cartas SGM
 
+Las cartas del SGM las obtuve a través de contactos. Pude comprobar que la
+extensión total coincide con la capa de ambientes del PPR, así que la doy por
+buena.
+
+La capa original con las cartas es utm_grid.shp. Ese Shape fue modificado para
+que incluya los nombres de las cartas (ie: Vizcaíno, Punta Muniz, etc), y además
+la columna con número único es `id`. Se guardó como `Cartas_SGM.shp`, en EPSG
+4326 (WGS 84), pero también se hizo una copia en proyección WGS84, UTM 21S
+(EPSG:32721).
+
+La tabla asociada a esta capa tiene las columnas `id`, `carta` y `nombre`. Para
+prescindir de la columna con las geometrías, en la base PostgreSQL se creó una
+copia sin esa información, a la que llamé `sgm_ref` (se usará más adelante).
+
+```bash
+v.in.ogr input=/home/jmb/BioUy/SIG/Shape/Cartas_SGM_utm21/Cartas_SGM_utm21.shp\
+  layer=Cartas_SGM_utm21 output=Cartas_SGM_utm21 --overwrite
+```
+
 En caso de las cartas SGM, convertí a raster también, pero esta vez con GRASS,
 ya que no es una capa tan complicada.
 
 ```bash
-v.to.rast input=utm_grid2@jmb output=utm_grid2 use=attr\
- attribute_column=gid label_column=carta --overwrite 
+v.to.rast input=Cartas_SGM_utm21@jmb output=Cartas_SGM_utm21 use=attr\
+ attribute_column=id label_column=carta --overwrite 
 ```
 
 - - -
@@ -482,7 +502,7 @@ r.stats -a -n --overwrite input=PaisRural_fix@jmb,bfilt_rast_reclass@jmb \
 Padrones x Cartas SGM:
 
 ```bash
-r.stats -a -n --overwrite input=PaisRural_fix@jmb,utm_grid2@jmb \
+r.stats -a -n --overwrite input=PaisRural_fix@jmb,Cartas_SGM_utm21@jmb \
   output=/home/jmb/BioUy/padrones_x_sgm.csv separator=comma
 ```
 
@@ -498,7 +518,7 @@ Tabla temporal:
 DROP TABLE padbio_import;
 CREATE TABLE padbio_import (
   padron_id integer,
-  biome_id smallint,
+  bioma_id smallint,
   area_mc numeric(12,3)
 );
     
@@ -512,34 +532,34 @@ Código útil para chequear que estén bien los datos:
 
 ```sql
 SELECT
- padron_id, biome_id, area_mc, pr.id, 
+ padron_id, bioma_id, area_mc, pr.id, 
  pr.padron, pr.depto, ppr.id, ppr.code AS biome
   FROM padbio_import pi 
   JOIN padron_ref pr ON pi.padron_id = pr.id 
-  JOIN ppr_sitfin ppr ON pi.biome_id = ppr.id 
+  JOIN bioma_ref ppr ON pi.bioma_id = ppr.id 
  WHERE pi.padron_id = 215666;
 ```
 
-Ahora sí, hacemos la tabla `padron_biome` definitiva:
+Ahora sí, hacemos la tabla `padron_bioma` definitiva:
 
 ```sql
-DROP TABLE padron_biome; -- Si estamos seguros...
+DROP TABLE padron_bioma; -- Si estamos seguros...
     
-CREATE SEQUENCE padron_biome_id_seq START 1;
-ALTER  SEQUENCE padron_biome_id_seq RESTART WITH 1;
+CREATE SEQUENCE padron_bioma_id_seq START 1;
+ALTER  SEQUENCE padron_bioma_id_seq RESTART WITH 1;
 
-CREATE TABLE padron_biome AS
+CREATE TABLE padron_bioma AS
 SELECT
   pi.padron_id,
-  pi.biome_id,
+  pi.bioma_id,
   pi.area_mc / 1e4 AS area_has, -- Importante: el área está en metros cuad.
-  nextval('padron_biome_id_seq') AS id
+  nextval('padron_bioma_id_seq') AS id
   FROM padbio_import pi;
     
-ALTER TABLE padron_biome ALTER COLUMN area_has TYPE numeric(8,3);
+ALTER TABLE padron_bioma ALTER COLUMN area_has TYPE numeric(8,3);
     
-ALTER TABLE public.padron_biome
-  ADD CONSTRAINT padbiome_pkey PRIMARY KEY (id);
+ALTER TABLE public.padron_bioma
+  ADD CONSTRAINT padbio_pkey PRIMARY KEY (id);
 ```
     
 ## Padrones x Carta SGM
@@ -605,18 +625,18 @@ DROP TABLE padsgm_import;
 Son tablas que relacionan los códigos de los biomas, sgm y padrones. Se hacen
 Foreign Keys para esto:
 
-    padron_biome (padron_id) -- padron_ref (id)
-    padron_biome (biome_id)  -- ppr_sitfin (id)
+    padron_bioma (padron_id) -- padron_ref (id)
+    padron_bioma (bioma_id)  -- bioma_ref (id)
     padron_sgm (padron_id)   -- padron_ref (id)
-    padron_sgm (sgm_id)      -- utm_grid2 (gid)
+    padron_sgm (sgm_id)      -- sgm_ref (gid)
 
-## Tabla ppr_sitfin
+## Tabla bioma_ref
 
 Será usada sobre para vincular los id de los biomas con los códigos de
 los mismos (columna `cod_sitfin`):
 
 ```sql
-CREATE TABLE ppr_sitfin AS 
+CREATE TABLE bioma_ref AS 
 SELECT row_number() over(order by code) AS id, code 
   FROM (select distinct cod_sitfin AS code 
   FROM ppr_biomes_bak) AS sitfin;
@@ -648,39 +668,39 @@ SELECT id, padron, depto, seccat, lamina, cuadricula, lat, lon
   FROM padron_cent;
 ```
 
-## Vínculo: padron_biome -- padron_ref
+## Vínculo: padron_bioma -- padron_ref
 
 Hay que agregar algunas restricciones: un primary key y un foreign key. Este
-último vinculando el id del padrón en `padron_ref` con el de `padron_biome`:
+último vinculando el id del padrón en `padron_ref` con el de `padron_bioma`:
 
 ```sql
 ALTER TABLE public.padron_ref
   ADD CONSTRAINT padron_ref_pkey PRIMARY KEY (id);
 
-ALTER TABLE public.padron_biome
+ALTER TABLE public.padron_bioma
   ADD CONSTRAINT padbio_pad_fkey FOREIGN KEY (padron_id) REFERENCES 
       public.padron_ref (id)
    ON UPDATE NO ACTION ON DELETE NO ACTION;
 
 CREATE INDEX fki_padbio_pad_fkey
-    ON public.padron_biome(padron_id);
+    ON public.padron_bioma(padron_id);
 ```
 
-## Vínculo: padron_biome -- ppr_sitfin
+## Vínculo: padron_bioma -- bioma_ref
 
 Lo mismo ahora, pero vinculando el id de los biomas entre las tablas
-`ppr_sitfin` y `padron_biome`:
+`bioma_ref` y `padron_bioma`:
 
 ```sql
-ALTER TABLE public.padron_biome
-  ADD CONSTRAINT padbio_bio_fkey FOREIGN KEY (biome_id) REFERENCES 
-      public.ppr_sitfin (id)
+ALTER TABLE public.padron_bioma
+  ADD CONSTRAINT padbio_bio_fkey FOREIGN KEY (bioma_id) REFERENCES 
+      public.bioma_ref (id)
    ON UPDATE NO ACTION ON DELETE NO ACTION;
 
 CREATE INDEX fki_padbio_bio_fkey
-    ON public.padron_biome(biome_id);
+    ON public.padron_bioma(bioma_id);
 
-ALTER TABLE public.ppr_sitfin
+ALTER TABLE public.bioma_ref
   ADD CONSTRAINT ppr_sitfin_pkey PRIMARY KEY (id);
 ```
 
@@ -699,17 +719,17 @@ CREATE INDEX fki_padsgm_pad_fkey
     ON public.padron_sgm(padron_id);
 ```
 
-## Vínculo: padron_sgm -- utm_grid2
+## Vínculo: padron_sgm -- sgm_ref
 
-Y luego el id de las cartas sgm, vinculando `utm_grid2` con `padron_sgm`:
+Y luego el id de las cartas sgm, vinculando `sgm_ref` con `padron_sgm`:
 
 ```sql
-ALTER TABLE public.utm_grid2
-  ADD CONSTRAINT utm_grid2_pkey PRIMARY KEY (gid);
+ALTER TABLE public.sgm_ref
+  ADD CONSTRAINT sgmref_pkey PRIMARY KEY (gid);
 
 ALTER TABLE public.padron_sgm
   ADD CONSTRAINT padsgm_sgm_fkey FOREIGN KEY (sgm_id) REFERENCES
-      public.utm_grid2 (gid)
+      public.sgm_ref (id)
    ON UPDATE NO ACTION ON DELETE NO ACTION;
 
 CREATE INDEX fki_padsgm_sgm_fkey
@@ -742,7 +762,7 @@ M12, M13, M14, M15, M3, M4, M5, M6, M7, M8, M9, N10, N11, N12, N13, N14, N15,
 N3, N4, N5, N6, N7, N8, N9, O13, O14, O15, O27, O4, O5, O6, O7, O8
 
 ```sql
-SELECT 'bfilt_reclass == ' || id || ' ||' from ppr_sitfin 
+SELECT 'bfilt_reclass == ' || id || ' ||' from bioma_ref 
  WHERE code IN (
    'PaSSLRNHA', 'BoOMMMNNA', 'BoPSLENHA', 'RiPPPLTNN', 'BoOMLRNNM',
    'BoOSLRNHA', 'BoPMMMNNA', 'BoQ', 'BoSSLENHA', 'BoSSLRNHA', 'BoPSLRNHA',
@@ -750,7 +770,7 @@ SELECT 'bfilt_reclass == ' || id || ' ||' from ppr_sitfin
    )
  ORDER BY id;
 
-SELECT 'utm_grid2 == ' || gid || ' ||' from utm_grid2 
+SELECT 'sgm_ref == ' || gid || ' ||' from sgm_ref 
  WHERE carta IN (
    'A17', 'B16', 'B17', 'B18', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'D12',
    'D13', 'D14', 'D15', 'D16', 'D17', 'D18', 'E10', 'E11', 'E12', 'E13', 'E14',

@@ -11,6 +11,11 @@ conductor.
 
 Nótese que acá hay código de SQL, GRASS y Bash, como mínimo.
 
+El esquema del producto final está en el archivo `BioUy.xml` y se puede
+visualizar en https://www.draw.io/, pero igual agrego la imagen aquí:
+
+![alt text](https://raw.githubusercontent.com/jumanbar/BioUy/master/Clean/BioUy.png "Esquema tablas")
+
 ## Sobre los archivos en la carpeta Clean:
 
 `Voronoi.sql`: intento fallido de hacer una función con PostGIS para crear un

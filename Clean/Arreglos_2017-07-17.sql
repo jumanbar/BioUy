@@ -26,8 +26,11 @@ SELECT c.id, u.gid, c.carta, u.carta, c.nombre, u.nombre
 DROP TABLE cartas_sgm_jmb ;
 
 ALTER TABLE utm_grid2 RENAME TO sgm_ref;
-
 ALTER TABLE sgm_ref RENAME CONSTRAINT utm_grid2_pkey TO sgmref_pkey;
+ALTER TABLE sgm_ref RENAME COLUMN gid TO id;
+ALTER TABLE sgm_ref DROP COLUMN cat;
+ALTER TABLE sgm_ref DROP COLUMN external_i;
+
 
 ALTER TABLE ppr_sitfin RENAME TO bioma_ref;
 
@@ -35,4 +38,5 @@ ALTER TABLE padron_biome RENAME TO padron_bioma;
 ALTER TABLE padron_bioma RENAME COLUMN biome_id TO bioma_id;
 ALTER TABLE padron_bioma RENAME CONSTRAINT padbiome_pkey TO padbio_pkey;
 ALTER SEQUENCE padron_biome_id_seq RENAME TO padron_bioma_id_seq;
+
 

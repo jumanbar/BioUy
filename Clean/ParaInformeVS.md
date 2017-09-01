@@ -16,27 +16,6 @@ visualizar en https://www.draw.io/, pero igual agrego la imagen aquí:
 
 ![alt text](https://raw.githubusercontent.com/jumanbar/BioUy/master/Clean/BioUy.png "Esquema tablas")
 
-## Sobre los archivos en la carpeta Clean:
-
-`Voronoi.sql`: intento fallido de hacer una función con PostGIS para crear un
-diagrama de Voronoi.
-
-`voronoi_with_R.sql`: otro intento de usar diagramas de Voronoi.
-
-`template.sql`: se usa en uno de los pasos descripto más abajo.
-`master.sh`: se usa en uno de los pasos descripto más abajo.
-
-`crear_tabla_species.sql`: no me acuerdo bien de por qué está, pero creo que es
-necesaria.
-
-`function_filter_rings.sql`: script para crear una función de PostgreSQL (+
-PostGIS). En este documento hay una copia de dicho código
-
-`function_filter_rings2.sql`: mismo que anterior, pero funcionaría para
-MultiPolygon (aunque por algo no funciona).
-
-`intento_importar_PaisRural.shp_a_GRASS.txt`: salida en standard output.
-
 - - -
 
 # Arreglos de la capa vectorial en PostgreSQL
@@ -833,19 +812,19 @@ Exportarlo desde GRASS:
 
 ```bash
 camino='/home/jmb/BioUy/SIG/Raster'
-# (Fri Sep  1 16:58:34 2017)
+# (Fri Sep  1 16:58:34 2017)  
 r.out.gdal -m -t --overwrite\
   input=bfilt_rast_reclass@jmb output=$camino/cobertura_ppr.tiff\
-  format=GTiff type=Byte
-# Checking GDAL data type and nodata value...
-# Using GDAL data type <Byte>
+  format=GTiff type=Byte  
+# Checking GDAL data type and nodata value...  
+# Using GDAL data type <Byte>  
 # Input raster map contains cells with NULL-value (no-data). The value 255 will
 # be used to represent no-data values in the input map. You can specify a nodata
-# value with the nodata option.
-# Exporting raster data to GTiff format...
+# value with the nodata option.  
+# Exporting raster data to GTiff format...  
 # r.out.gdal complete. File </home/jmb/BioUy/SIG/Raster/cobertura_ppr.tiff>
 # created.
-# (Fri Sep  1 17:03:17 2017) Command finished (4 min 43 sec)
+# (Fri Sep  1 17:03:17 2017) Command finished (4 min 43 sec)  
 ```
 
 En QGIS:
@@ -926,61 +905,4 @@ Ahora, al agregar la capa en QGIS:
 
 Listo!
 
-
-## Nota al final:
-
-Para hacer una distribución de una especie, se puede usar `r.mapcalc` para
-combinar ambientes y cartas SGM listados entre los que habita. Hice una prueba
-con una especie, el Coendú. 
-
-Estos son los datos de uso de ambientes y cartas en las que se encuentra (según
-la página del SNAP):
-
-AMBIENTES:
-
-PaSSLRNHA, BoOMMMNNA, BoPSLENHA, RiPPPLTNN, BoOMLRNNM, BoOSLRNHA, BoPMMMNNA,
-BoQ, BoSSLENHA, BoSSLRNHA, BoPSLRNHA, BoOSLENHA, RiPPPLINN, BoPMLRNNM, PaSMLRNNM
-
-CARTAS SGM:
-
-A17, B16, B17, B18, C13, C14, C15, C16, C17, C18, D12, D13, D14, D15, D16, D17,
-D18, E10, E11, E12, E13, E14, E15, E16, E17, E18, F10, F11, F12, F13, F14, F15,
-F16, F17, F18, F9, G10, G11, G12, G13, G14, G15, G16, G17, G18, G8, G9, H10,
-H11, H12, H13, H14, H15, H16, H17, H18, H7, H8, H9, J10, J11, J12, J13, J14,
-J15, J16, J17, J6, J7, J8, J9, K10, K11, K12, K13, K14, K15, K16, K4, K5, K6,
-K7, K8, K9, L10, L11, L12, L13, L14, L15, L3, L4, L5, L6, L7, L8, L9, M10, M11,
-M12, M13, M14, M15, M3, M4, M5, M6, M7, M8, M9, N10, N11, N12, N13, N14, N15,
-N3, N4, N5, N6, N7, N8, N9, O13, O14, O15, O27, O4, O5, O6, O7, O8
-
-```sql
-SELECT 'bfilt_reclass == ' || id || ' ||' from bioma_ref 
- WHERE code IN (
-   'PaSSLRNHA', 'BoOMMMNNA', 'BoPSLENHA', 'RiPPPLTNN', 'BoOMLRNNM',
-   'BoOSLRNHA', 'BoPMMMNNA', 'BoQ', 'BoSSLENHA', 'BoSSLRNHA', 'BoPSLRNHA',
-   'BoOSLENHA', 'RiPPPLINN', 'BoPMLRNNM', 'PaSMLRNNM'
-   )
- ORDER BY id;
-
-SELECT 'sgm_ref == ' || gid || ' ||' from sgm_ref 
- WHERE carta IN (
-   'A17', 'B16', 'B17', 'B18', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'D12',
-   'D13', 'D14', 'D15', 'D16', 'D17', 'D18', 'E10', 'E11', 'E12', 'E13', 'E14',
-   'E15', 'E16', 'E17', 'E18', 'F10', 'F11', 'F12', 'F13', 'F14', 'F15', 'F16',
-   'F17', 'F18', 'F9', 'G10', 'G11', 'G12', 'G13', 'G14', 'G15', 'G16', 'G17',
-   'G18', 'G8', 'G9', 'H10', 'H11', 'H12', 'H13', 'H14', 'H15', 'H16', 'H17',
-   'H18', 'H7', 'H8', 'H9', 'J10', 'J11', 'J12', 'J13', 'J14', 'J15', 'J16',
-   'J17', 'J6', 'J7', 'J8', 'J9', 'K10', 'K11', 'K12', 'K13', 'K14', 'K15',
-   'K16', 'K4', 'K5', 'K6', 'K7', 'K8', 'K9', 'L10', 'L11', 'L12', 'L13', 'L14',
-   'L15', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9', 'M10', 'M11', 'M12', 'M13',
-   'M14', 'M15', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'N10', 'N11', 'N12',
-   'N13', 'N14', 'N15', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8', 'N9', 'O13', 'O14',
-   'O15', 'O27', 'O4', 'O5', 'O6', 'O7', 'O'
-   )
- ORDER BY gid;
-```
-
-La idea era tirar esos resultados en el `r.mapcalc` de GRASS. Hice una prueba,
-pero parecía ir demasiado lento, así que no seguí. De todas formas, esto tiene
-el problema de que corta los límites con las cartas, en vez de abarcar todos los
-parches de ambientes adecuados que tocan las cartas en algún punto.
 

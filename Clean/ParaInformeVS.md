@@ -1,3 +1,20 @@
+<!---
+Comentarios:  
+  sudo apt install texlive-fonts-recommended,texlive-latex-extra,texlive-xetex  
+    texlive-fonts-extra,texlive-lang-european,texlive-lang-spanish   
+  pandoc -D latex > mitemplate.tex  
+  # Modificaciones en mitemplate.tex, para que tengla la fuente que quiero...  
+  pandoc -s -o ParaInformeVS.tex ParaInformeVS.md --template mitemplate.tex  
+  pandoc -s -o ~/Procesamiento.pdf ParaInformeVS.md --template mitemplate.tex  
+--> 
+
+---
+title: 'Determinación de ambientes (PPR) y Cartas SGM en padrones rurales de Uruguay: Procesamiento de los mapas'
+author: Juan Manuel Barreneche  
+colorlinks: blue
+lang: es-AR
+---
+
 # Resumen
 
 En este texto se describe el proceso de creación de las tablas que vinculan
@@ -12,28 +29,35 @@ conductor.
 Nótese que acá hay código de SQL, GRASS y Bash, como mínimo.
 
 El esquema del producto final está en el archivo `BioUy.xml` y se puede
-visualizar en https://www.draw.io/, pero igual agrego la imagen aquí:
+visualizar en [https://www.draw.io](https://www.draw.io/). En la **Figura 1** se muestra el esquema
+resultante.
 
-![alt text](https://raw.githubusercontent.com/jumanbar/BioUy/master/Clean/BioUy.png "Esquema tablas")
+![Modelo Entidad Relación](https://raw.githubusercontent.com/jumanbar/BioUy/master/Clean/BioUy.png "Esquema tablas")
 
-- - -
+\newpage
 
 # Arreglos de la capa vectorial en PostgreSQL
 
-Varios arreglos a la capa vectorial con los ambientes (`ppr_biomes`). Se asume
-que dicha capa ya está importada dentro de la base.
+Lo primero es hacer varios arreglos a la capa vectorial con los ambientes
+(`ppr_biomes`). Se asume que dicha capa ya está importada dentro de la base.
 
 Si hace falta importar la capa de nuevo, se puede hacer con QGIS: si se lo
 conecta a la base PostgreSQL y con la interfaz gráfica se hace la importación.
 Ver herramientas en el menú Database > DB Manager.
 
-## Respaldo de la tabla original
+A continuación se muestra la secuencia de pasos para modificar la capa
+vectorial/tabla para disminuir la cantidad de errores topológicos y complejidad.
+Esto ayuda a que se pueda renderizar más rápidamente en QGIS y también a que
+hayan menos errores cuando se haga la exportación a raster (GeoTIFF).
 
-La tabla `ppr_biomes_bak` es un backup que hice de la capa de ambientes
-(ppr_biomes). Acá se hace otra copia, para no tocar ese backup.
+## 1. Respaldo de la tabla original
+
+Para hacer modificaciones primero se respalda la capa/tabla original, bajo el
+nombre `ppr_biomes_bak` (este puede ser el nombre dado a la capa al ser
+importada desde QGIS). Luego se crea una copia que modificaremos, a la que
+llamamos `ppr_biomes`:
 
 ```sql
---DROP TABLE ppr_biomes;
 CREATE TABLE ppr_biomes AS 
   SELECT id, geom FROM ppr_biomes_bak;
 -- SELECT 48523
@@ -43,7 +67,7 @@ ALTER TABLE ppr_biomes ADD constraint pk_ppr_biomes_id PRIMARY KEY (id);
 CREATE INDEX sidx_ppr_biomes_geom ON ppr_biomes USING GIST (geom);
 ```
 
-## Eliminar puntos repetidos
+## 2. Eliminar puntos repetidos
 
 ```sql
 UPDATE ppr_biomes SET geom = ST_RemoveRepeatedPoints(geom);
@@ -52,7 +76,7 @@ UPDATE ppr_biomes SET geom = ST_RemoveRepeatedPoints(geom);
 > Query returned successfully: 48523 rows affected, 04:03 minutes execution
 > time.
 
-## Simplificar geometrías
+## 3. Simplificar geometrías
 
 En PostgreSQL:
 
@@ -60,7 +84,7 @@ En PostgreSQL:
 UPDATE ppr_biomes SET geom = ST_Simplify(geom, 1);
 ```
 
-## Multi -> Single polygons (ST_Dump)
+## 4. Multi -> Single polygons (ST_Dump)
 
 ```sql
 CREATE TABLE ppr_biomes_dump AS
@@ -68,9 +92,9 @@ CREATE TABLE ppr_biomes_dump AS
 -- SELECT 6798778
 ```
 
-## Filtrar areas menores a una hectárea
+## 5. Filtrar areas menores a una hectárea
 
-### Crear función filter_rings en PostgreSQL
+### 5.1 Crear función filter_rings en PostgreSQL
 
 Sirve para eliminar áreas pequeñas.
 
@@ -102,7 +126,7 @@ $BODY$
   LANGUAGE 'sql' IMMUTABLE;
 ```
 
-### Usar la función para eliminar áreas pequeñas
+### 5.2 Usar la función para eliminar áreas pequeñas
 
 ```sql
 -- drop table ppr_biomes_dump_filtered ;
@@ -130,7 +154,7 @@ CREATE INDEX sidx_ppr_biomes_dump_filtered_geom
     ON ppr_biomes_dump_filtered USING GIST (geom);
 ```
 
-## Buffer
+## 6. Buffer
 
 Este es un truco para solucionar problemas de polígonos interceptándose a sí
 mismos.
@@ -152,7 +176,7 @@ SELECT COUNT(*), st_GeometryType(geom)
 
 Debido a esto es que se ejecutan los comandos de la siguiente sección...
 
-## Multi -> Single Polygon parte 2
+## 7. Multi -> Single Polygon parte 2
 
 Este paso hace 2 cosas:
 
@@ -217,7 +241,7 @@ SELECT count(*), st_GeometryType(geom)
 SELECT min(ST_Area(geom)) FROM ppr_biomes_dump_filtered;
 ```
 
-## Crear bioma_ref
+## 8. Crear bioma_ref
 
 La tabla `bioma_ref` será usada sobre para vincular los id de los biomas con los
 códigos de los mismos (columna `cod_sitfin`). Es parte del producto final para
@@ -230,7 +254,7 @@ SELECT row_number() OVER(ORDER BY code) AS id, code
   FROM (SELECT DISTINCT cod_sitfin AS code FROM ppr_biomes_bak);
 ```
 
-## Tabla bfilt_snap
+## 9. Tabla bfilt_snap
 
 Es capa vectorial. Toma los polígonos de `ppr_biomes_dump_filtered`. Agrega la
 columna id de la tabla `ppr_biomes_bak`. Tiene repetidos ya que los
@@ -278,7 +302,12 @@ xMin,yMin 353569.38,6125210.00 : xMax,yMax 859065.56,6674062.00
 
 # Arreglos usando GRASS (y QGIS)
 
-## Convertir bfilt_snap en raster
+En esta etapa vamos a exportar la capa vectorial de biomas en forma de raster
+(GeoTIFF), la cual importaremos en un *location* de GRASS (7.0). Una vez dentro
+de GRASS se rellenarán los "huecos" que se generaron en los pasos de la etapa
+anterior (específicamente, el paso 5.2).
+
+## 1. Convertir bfilt_snap en raster
 
 Cargar capa `bfilt_snap` en QGIS, guardar como shape
 (`bfilt_snap.sh`) y luego exportar a raster 10 m de resolución, usando cat de
@@ -290,14 +319,7 @@ gdal_rasterize -a id -tr 10.0 10.0 -ot Int32 -l bfilt_snap \
   /home/jmb/BioUy/SIG/Raster/bfilt_rast.tiff
 ```
 
-Son 22 GB!! Lo borré más tarde.
-
-**Nota**: esto fue la primera vez, ahora el comando lo modifiqué para que exporte
-con Int32 (antes era Float64, el valor por defecto).
-*Espero que este cambio no afecte a los pasos subsiguientes. No verifiqué que
-funcione todo bien.*
-
-## Preparar GRASS
+## 2. Preparar GRASS
 
 Instalé GRASS 7.0 para hacer parte del proceso. Para crear un location + mapset,
 se pueden correr estos comandos en la terminal:
@@ -309,7 +331,7 @@ grass70 -c epsg:32721 /home/$User/grassdata/BioUy
 grass70 -c /home/$User/grassdata/BioUy/$User
 ```
 
-## Importar a GRASS
+## 2. Importar a GRASS
 
 Con el GRASS abierto en la location BioUy y mapset jmb, correr (en la terminal):
 
@@ -360,7 +382,7 @@ r.grow.distance --overwrite input="bfilt_rast@jmb" \
   distance="bfilt_rast_dist" value="bfilt_rast_val" metric="euclidean"
 ```
 
-## Reclasificación: 
+## 3. Reclasificación: 
 
 la tabla se obtiene con una consulta sql (desde el psql):
 
@@ -388,7 +410,7 @@ Que se visualice mejor:
 r.colors -e map=bfilt_rast_reclass@jmb color=bgyr
 ```
 
-## Padrones a raster
+## 4. Padrones a raster
 
 Exportar a raster el shape de padrones (`gdal_rasterize`... igual que antes).
 
@@ -414,7 +436,7 @@ Debido a que usé la opción `-ot Int32` al convertir el Shape en GeoTIFF (con
 `gdal_rasterize`), ahora el raster PaisRural en GRASS es CELL (números enteros,
 en lugar de double precision, DCELL).
 
-## Corregir el problema del padrón 0
+## 5. Corregir el problema del padrón 0
 
 Ocurre que en donde no hay datos (ej: cauces de ríos, rutas, etc),
 `gdal_rasterize` asigna el valor 0. Esto es un problema, porque también hay un
@@ -427,7 +449,7 @@ convierto en NULL. Esto elimina también el padrón 0, pero no importa, porque
 luego combino los mapas *PaisRural* y *padron_arreglao*, de forma que al final,
 lo único que tiene valor 0 en el raster resultante, es el padrón 0.
 
-### Mapa *padron_arreglao*
+### 5.1 Mapa *padron_arreglao*
 
 ```bash
 g.region n=6167861.71531 s=6165363.81502 e=626792.772268 w=622912.700483
@@ -442,7 +464,7 @@ con valor 0:
 r.mapcalc expression='padron_arreglao = if(PaisRural@jmb, null())' --overwrite
 ```
 
-### Pasar a NULL todos los 0 del PaisRural
+### 5.2 Pasar a NULL todos los 0 del PaisRural
 
 ```bash
 g.region region=region_x_defecto@jmb
@@ -450,7 +472,7 @@ g.region region=region_x_defecto@jmb
 r.null map=PaisRural@jmb setnull=0
 ```
 
-### Emparchar los dos rasters
+### 5.3 Emparchar los dos rasters
 
 La función `r.patch` junta dos rasters de la siguiente manera: si en alguno de
 los dos mapas hay NULL, entonces se llena con el valor del mapa que no tiene
@@ -462,13 +484,9 @@ r.patch --overwrite input=PaisRural@jmb,padron_arreglao@jmb \
   output=PaisRural_fix
 ```
 
-## Cartas SGM
+## 6. Cartas SGM
 
-Las cartas del SGM las obtuve a través de contactos. Pude comprobar que la
-extensión total coincide con la capa de ambientes del PPR, así que la doy por
-buena.
-
-La capa original con las cartas es utm_grid.shp. Ese Shape fue modificado para
+La capa original con las cartas es `utm_grid.shp`. Ese Shape fue modificado para
 que incluya los nombres de las cartas (ie: Vizcaíno, Punta Muniz, etc), y además
 la columna con número único es `id`. Se guardó como `Cartas_SGM.shp`, en EPSG
 4326 (WGS 84), pero también se hizo una copia en proyección WGS84, UTM 21S
@@ -495,27 +513,46 @@ v.to.rast input=Cartas_SGM_utm21@jmb output=Cartas_SGM_utm21 use=attr\
 
 # Intercepciones entre capas
 
-Padrones x Ambientes:
+Aquí simplemente se hacen cálculos de las áreas de intersección entre la capa de
+padrones rurales y las otras dos capas importadas (ambientes, o
+`bfilt_rast_reclass` y cartas SGM, o `Cartas_SGM_utm21`). El resultado son dos
+tablas guardadas en archivos csv. Ej: sabremos que dentro el padrón rural X 
+ocurren los ambientes Y1, Y2, Y3 ocurren, además de qué área ocupan. En la tabla
+resultante se verá algo así:
+
+ Padrón   Ambiente   Area (m^2^)
+-------- ---------- -------------
+    X        Y1          233
+    X        Y2         1422
+    X        Y3          601
+
+### Padrones x Ambientes:
 
 ```bash
 r.stats -a -n --overwrite input=PaisRural_fix@jmb,bfilt_rast_reclass@jmb \
   output=/home/jmb/BioUy/padrones_x_ambientes.csv separator=comma
 ```
 
-Padrones x Cartas SGM:
+### Padrones x Cartas SGM:
 
 ```bash
 r.stats -a -n --overwrite input=PaisRural_fix@jmb,Cartas_SGM_utm21@jmb \
   output=/home/jmb/BioUy/padrones_x_sgm.csv separator=comma
 ```
-
 - - -
 
 # Importar resultados a PostgreSQL
 
-## Padrones x Ambientes
+El resultado de esta etapa será tener las tablas:
 
-Tabla temporal:
+- `padron_bioma`
+- `padron_sgm`
+
+
+## 1. Padrones x Ambientes
+
+Hay que hacer una tabla temporal en donde traer todos los valores del CSV creado
+anteriormente:
 
 ```sql
 DROP TABLE padbio_import;
@@ -531,7 +568,7 @@ COPY padbio_import FROM '/home/jmb/BioUy/padrones_x_ambientes.csv' DELIMITER ','
 -- COPY 710465 <- Lógicamente, ahora hay más combinaciones padrón/ambiente
 ```
 
-Código útil para chequear que estén bien los datos:
+El siguiente código es útil para chequear que estén bien los datos:
 
 ```sql
 SELECT
@@ -565,9 +602,10 @@ ALTER TABLE public.padron_bioma
   ADD CONSTRAINT padbio_pkey PRIMARY KEY (id);
 ```
     
-## Padrones x Carta SGM
+## 2. Padrones x Carta SGM  
 
-Ahora la otra tabla temporal:
+Repitiendo los pasos del punto anterior, importamos la segunda tabla:  
+
     
 ```sql
 DROP TABLE padsgm_import;
@@ -625,19 +663,26 @@ DROP TABLE padsgm_import;
 
 # Tablas de referencia en PostgreSQL
 
-Son tablas que relacionan los códigos de los biomas, sgm y padrones. Se hacen
-Foreign Keys para esto:
+Tenemos 3 tipos de "objetos", y para cada uno corresponde una tabla de
+referencia con identificador único:
 
-    padron_bioma (padron_id) -- padron_ref (id)
-    padron_bioma (bioma_id)  -- bioma_ref (id)
-    padron_sgm (padron_id)   -- padron_ref (id)
-    padron_sgm (sgm_id)      -- sgm_ref (gid)
+1. `padron_ref`
+2. `bioma_ref`
+3. `sgm_ref`
 
-## Tabla bioma_ref
+Estas tablas se sumarán a las ya creadas, conformando las 5 tablas del producto
+(Fig. 1):
+
+4. `padron_bioma`
+5. `padron_sgm`
+
+## 1. Creación de las tablas `_ref`
+
+### 1.1 Tabla bioma_ref
 
 Ya creada, necesaria también para armar `bfilt_snap` (ver arriba).
 
-## Tabla padron_ref
+### 1.2 Tabla padron_ref
 
 La tabla `padron_cent` (centroides de los padrones rurales) se obtiene con QGIS
 (Menú > Vector > Geometry Tools > Polygon Centroids). Esta se usará como
@@ -661,10 +706,28 @@ INSERT INTO padron_ref (id, padron, depto, seccat, lamina, cuadricula, lat, lon)
 SELECT id, padron, depto, seccat, lamina, cuadricula, lat, lon
   FROM padron_cent;
 ```
+### 1.3
 
-## Vínculo: padron_bioma -- padron_ref
+Con QGIS importé el archivo `Cartas_SGM.shp` a la base de datos. Este Shape
+contiene las dimensiones de las cartas así como su código (A17, E29, etc) y su
+nombre (Vizcaíno, Punta Muníz, etc). La tabla `sgm_ref` es básicamente la tabla
+asociada a este Shape, eliminando solamente la columna `geom`.
 
-Hay que agregar algunas restricciones: un primary key y un foreign key. Este
+Usando comandos SQL se hace un Primary Key con la columna id.
+
+## 2. Establecer los vínculos entre tablas
+
+Para asegurar que haya una correcta relación entre todos los
+elementos, se construiran 4 *Foreign Keys* (ver Figura 1):
+
+    1. padron_bioma (padron_id): refiere a   padron_ref (id)
+    2. padron_bioma (bioma_id):  refiere a   bioma_ref (id)
+    3. padron_sgm (padron_id):   refiere a   padron_ref (id)
+    4. padron_sgm (sgm_id):      refiere a   sgm_ref (gid)
+
+### 2.1 Vínculo: padron_bioma --> padron_ref
+
+Hay que agregar algunas restricciones: un Primary Key y un Foreign Key. Este
 último vinculando el id del padrón en `padron_ref` con el de `padron_bioma`:
 
 ```sql
@@ -680,7 +743,7 @@ CREATE INDEX fki_padbio_pad_fkey
     ON public.padron_bioma(padron_id);
 ```
 
-## Vínculo: padron_bioma -- bioma_ref
+### 2.2 Vínculo: padron_bioma --> bioma_ref
 
 Lo mismo ahora, pero vinculando el id de los biomas entre las tablas
 `bioma_ref` y `padron_bioma`:
@@ -698,7 +761,7 @@ ALTER TABLE public.bioma_ref
   ADD CONSTRAINT ppr_sitfin_pkey PRIMARY KEY (id);
 ```
 
-## Vínculo: padron_sgm -- padron_ref
+### 2.3 Vínculo: padron_sgm --> padron_ref
 
 Las mismas consideraciones con los id de las cartas sgm. Primero, vincular
 `padron_sgm` con `padron_ref` (id de los padrones):
@@ -713,7 +776,7 @@ CREATE INDEX fki_padsgm_pad_fkey
     ON public.padron_sgm(padron_id);
 ```
 
-## Vínculo: padron_sgm -- sgm_ref
+### 2.4 Vínculo: padron_sgm --> sgm_ref
 
 Y luego el id de las cartas sgm, vinculando `sgm_ref` con `padron_sgm`:
 
@@ -734,15 +797,20 @@ CREATE INDEX fki_padsgm_sgm_fkey
 
 # Arreglos 19/8/2017
 
-> BoPPLENNN-b: equivale con BoArPPLENNN-b en la BDsnap. Hay que modificar en las
-> tablas a BoArPPLENNN-b
-> Ba-PaPPPLTNN: equivale con BaPPPLTNN en la BDsnap. Hay que unificarlos como
-> BaPPPLTNN
-> BoPPPLINN: equivale con RiPPPLINN en la BDsnap. Hay que unificarlos como
-> RiPPPLINN
-> D: es un error del shape: hay que eliminarlo
-> P: es un error del shape: hay que eliminarlo
-> O: es un error del shape: hay que eliminarlo  
+- BoPPLENNN-b: equivale con BoArPPLENNN-b en la BDsnap. Hay que modificar en las
+  tablas a BoArPPLENNN-b
+
+- Ba-PaPPPLTNN: equivale con BaPPPLTNN en la BDsnap. Hay que unificarlos como
+  BaPPPLTNN
+
+- BoPPPLINN: equivale con RiPPPLINN en la BDsnap. Hay que unificarlos como
+  RiPPPLINN
+
+- D: es un error del shape: hay que eliminarlo
+
+- P: es un error del shape: hay que eliminarlo
+
+- O: es un error del shape: hay que eliminarlo  
 
 ## bfilt_snap
 

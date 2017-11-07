@@ -807,13 +807,13 @@ CREATE INDEX fki_padsgm_sgm_fkey
 # Arreglos 19/8/2017
 
 > BoPPLENNN-b: equivale con BoArPPLENNN-b en la BDsnap. Hay que modificar en las
-> tablas a BoArPPLENNN-b
+> tablas a BoArPPLENNN-b  
 > Ba-PaPPPLTNN: equivale con BaPPPLTNN en la BDsnap. Hay que unificarlos como
-> BaPPPLTNN
+> BaPPPLTNN  
 > BoPPPLINN: equivale con RiPPPLINN en la BDsnap. Hay que unificarlos como
-> RiPPPLINN
-> D: es un error del shape: hay que eliminarlo
-> P: es un error del shape: hay que eliminarlo
+> RiPPPLINN  
+> D: es un error del shape: hay que eliminarlo  
+> P: es un error del shape: hay que eliminarlo  
 > O: es un error del shape: hay que eliminarlo  
 
 ## bfilt_snap

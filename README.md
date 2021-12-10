@@ -32,6 +32,7 @@ diagrama de Voronoi.
 `voronoi_with_R.sql`: otro intento de usar diagramas de Voronoi.
 
 `template.sql`: se usa en uno de los pasos descripto más abajo.
+
 `master.sh`: se usa en uno de los pasos descripto más abajo.
 
 `crear_tabla_species.sql`: no me acuerdo bien de por qué está, pero creo que es
